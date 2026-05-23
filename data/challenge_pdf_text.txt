@@ -1,0 +1,231 @@
+--- page 1 ---
+P R O M P T  F I N A N C E  H A C K A T H O N  · 2026
+Agentic GraphRAGfor accountingregulatory research.
+A  w e e k e n d  o n  re trie v a l, g ra p h s , a n d  a g e n ts  —  o v e r re a l E u ro p e a n  re g u la tio n .
+Aalto University Taxxa AI Oy
+H O S T E D  B Y
+×
+C H A L L E N G E  B Y
+g i t h u b . c o m / t a x x a - a i / a a l t o - h a c k a t o n - 2 0 2 6
+--- page 2 ---
+0 1 .
+The Second Brainfor modern accounting.
+W H O  W E  A R E
+Tru s te d  b y  4 ,3 0 0 +  p ro fe s s io n a ls  a c ro s s  7  E U  c o u n t r ie s . W e  in g e s t o ffic ia l re g u la tio n , k e e p  it in  s y n c ,
+a n d  e x p o s e  it th ro u g h  a n  L L M - n a tiv e  in te rfa c e .
+T h e  h a rd  p a rt —  th e  p a rt w e  w a n t to  ta lk  a b o u t to d a y  —  is  m a k in g  th e  a n s w e rs  a c tu a lly  c o rre c t.
+--- page 3 ---
+0 2 .
+Knowledge research, today:a standard RAG pipeline.
+T O D A Y :  R A G
+S C R A P E
+0 1
+Sourceingestion
+400+ official
+sources: legislation,
+tax authority
+bulletins, court
+rulings.
+C H U N K
+0 2
+Segmentation
+Split each
+document into
+passages a
+language model can
+attend to in a single
+context window.
+E M B E D
+0 3
+Vectorization
+Pass each chunk
+through an
+embedding model;
+store the resulting
+vector in an ANN
+index.
+R E T R IE V E
+0 4
+Top-k search
+At query time,
+embed the question
+and fetch the
+nearest k passages.
+Optionally rerank.
+G E N E R A T E
+0 5
+Groundedanswer
+Stuff retrieved
+passages into the
+prompt, ask the
+LLM to answer with
+citations back to
+source.
+--- page 4 ---
+0 3 .
+Where naive RAG breakson regulatory text.
+Semantic units don’trespect tokenboundaries
+Fixed-size or paragraph-
+split chunkers cut clauses
+mid-sentence. Exceptions
+and definitions land in
+different chunks than the
+rule they qualify.
+C H U N K IN G
+a .
+R A N K IN G
+b .
+Cosine similarity isjurisdiction-blind
+A repealed 2014 article
+and a binding 2024 decree
+can sit at the same
+distance from the query.
+Recency, authority, scope
+— all flattened into one
+score.
+Inter-documentreferences aren’tfollowed
+“See §102 AVL” is just text
+to an ANN index. The
+retriever canʼt hop along
+citation edges to pull the
+actual referenced clause.
+S T R U C T U R E
+c .
+C O M P O S IT IO N
+d .
+Multi-hop questionsget one-hop answers
+“Is X deductible for an
+exempt entity?” needs a
+rule, an exception, and a
+definition — from three
+documents. Top-k just
+returns three near-
+duplicates of the question.
+--- page 5 ---
+0 4 .
+Give retrieval astructureto walk.
+E n titie s  a s  n o d e s . R e fe re n c e s , h ie ra rc h ie s , re p e a ls ,
+ju ris d ic tio n  a s  ty p e d  e d g e s . R e trie v a l b e c o m e s  a  c o n s tra in e d
+g ra p h  tra v e rs a l in s te a d  o f a  c o s in e  ra c e  o v e r a  fla t in d e x .
+i m p l e m e n t s i n t e r p r e t s
+t r a n s p o s e s
+d e f i n e s d e f i n e s
+i n t e r p r e t e d _ b y c i t e d _ b y
+ALV (VAT)
+c o n c e p t
+FI · AVL
+s t a t u t e Verohallinto
+t a x  a u t h o r i t y
+EU · 2006/112
+d i r e c t i v e
+§102 AVL
+c l a u s e VH-ohje 47
+g u i d a n c e
+KKO 2023:55
+c a s e  l a w
+--- page 6 ---
+0 5 .
+Building the graph — four open problems.
+F R O M  R A G  T O  G R A P H R A G
+N E R
+0 1
+Entity extraction
+Pull domain entities out of
+regulation text: articles,
+taxes, agencies, deadlines,
+monetary thresholds.
+Domain-specific NER
+beats generic models —
+you have the corpus.
+R E L A T IO N S
+0 2
+Relation extraction
+Type the edges. Amends ·
+repeals · transposes ·
+references · applies-when.
+Mix rule-based parsers
+(clear citation forms) with
+LLM-as-extractor for the
+looser cases.
+Section-awareparsing — notchunking
+Drop fixed-size windows.
+Use the regulationʼs own
+units: book → title →
+article → paragraph. The
+hierarchy carries scope
+and inheritance; let
+retrieval walk it.
+H IE R A R C H Y
+0 3
+R E T R IE V A L
+0 4
+Hybrid retrieval —embeddings +edges
+Embed each node's text —
+its definition, summary or
+surface forms. A query
+finds the right entry points
+by vector similarity; the
+graph carries the walk
+from there. Fuzzy entry,
+structured traversal.
+--- page 7 ---
+0 6 .
+Where agents earn their keep.
+F R O M  G R A P H R A G  T O  A G E N T S
+H a rd  re g u la to ry  q u e s tio n s  n e e d  d e c o m p o s itio n , lo o k u p s, a n d  s e c o n d -g u e s s in g  —  th e  k in d  o f  w o rk  a n  o rc h e s tra to r o f  s m a ll
+s p e c ia lis e d  a g e n ts  c a n  h a n d le .
+P L A N N E R
+0 1
+Query planningsubagent
+Decompose “is X
+deductible?” into: identify
+entity → locate governing
+statute → check
+exceptions → check case-
+law overrides. Picks a
+traversal strategy over the
+graph.
+E X T R A C T O R
+0 2
+LLM-as-extractor ondemand
+When rule-based parsers
+stall on a fuzzy citation or
+implicit reference, hand
+the passage to a small LLM
+agent that returns a typed
+relation — with a
+confidence score and a
+justification.
+Claim-to-sourcecritic
+Walks each claim back to a
+node in the graph.
+Surfaces conflicting paths
+(e.g. statute vs. later case
+law), refuses to commit
+when sources disagree.
+V E R IF IE R
+0 3
+C L A R IF IE R
+0 4
+Disambiguationsubagent
+Most regulatory questions
+are underspecified —
+missing jurisdiction, tax
+year, entity type. Detects
+the gaps and either asks
+back, or runs the query
+under explicit assumptions
+surfaced in the answer.
+--- page 8 ---
+0 7 .
+Questions?
+--- page 9 ---
+0 8 .
+We’re aroundall weekend.
+H a p p y  to  p a ir o n  c o d e , lo o k  a t y o u r re p o , o r a rg u e  a b o u t g ra p h  s c h e m a s . H o p
+o n  S la c k  o r s e n d  a  n o te .
+Scan to join
+S L A C K  ·  J O IN  T H E  C H A N N E L
+github.com/taxxa-ai/aalto-hackaton-2026 stephane@taxxa.ai
+R E P O
+M A IL

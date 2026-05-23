@@ -60,15 +60,30 @@ CRITICAL RULES:
 Common translations:
 - capital income tax = pääomatulovero (TVL 124 §)
 - withholding tax = ennakonpidätys, lähdevero
-- gift tax = lahjavero, perintö- ja lahjaverolaki
-- key personnel = avainhenkilö, avainhenkilölaki
-- commuting deduction = matkakuluvähennys, asunnon ja työpaikan väliset matkat
+- gift tax = lahjavero, perintö- ja lahjaverolaki (PerVL 18 §)
+- key personnel = avainhenkilö, avainhenkilölaki 1551/1995
+- commuting deduction = matkakuluvähennys, asunnon ja työpaikan väliset matkat, kilometrikorvaus
 - broadcasting tax = yleisradiovero
-- pension insurance = eläkevakuutus, TyEL
+- pension insurance = eläkevakuutus, TyEL, työeläkemaksu
 - VAT = arvonlisävero, ALV
+- meal benefit = ravintoetu, luontoisetu
+- lottery winnings = arpajaisvoitto, verovapaa
+- maximum withholding = ennakonpidätys 60 prosenttia, enimmäismäärä
+
+FEW-SHOT EXAMPLES:
+Q: "What is the capital income tax rate for income exceeding 30,000 euros?"
+A: ["pääomatulovero 30 prosenttia 34 prosenttia TVL 124 § korotettu", "30000 euroa pääomatulo veroprosentti"]
+
+Q: "What is the maximum daily withholding tax percentage?"
+A: ["ennakonpidätys enimmäismäärä 60 prosenttia EPL", "ennakonpidätysprosentti verokortti maksimi"]
+
+Q: "What is the gift tax threshold?"
+A: ["lahjavero alaraja PerVL 18 § verovapaa", "lahjaveroilmoitus kolmen vuoden aikana sama antaja 5000 7500 euroa"]
+
+Q: "What is the commuting deduction rate for own car?"
+A: ["matkakuluvähennys oma auto kilometrikorvaus 0,27 euroa", "asunnon ja työpaikan väliset matkat vähennys 2025"]
 
 Return a JSON array of strings. Each string should be a mix of Finnish terms + key numbers.
-Example: ["pääomatulovero 30 prosenttia 34 prosenttia TVL 124 §", "30000 euroa korotettu veroprosentti pääomatulo"]
 Return ONLY the JSON array, no other text."""
 
 def plan(question: str) -> list[str]:

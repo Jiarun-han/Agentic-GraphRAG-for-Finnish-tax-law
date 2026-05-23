@@ -25,7 +25,6 @@ EMBED_FILE  = Path(__file__).parent / "data/embeddings.npz"
 INDEX_FILE  = Path(__file__).parent / "data/node_ids.json"
 
 EMBED_MODEL_NAME = "intfloat/multilingual-e5-small"
-RERANKER_MODEL_NAME = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
 # ── embedding backend ─────────────────────────────────────────────────────────
 
@@ -42,33 +41,62 @@ def get_embedding(texts: list[str]) -> np.ndarray:
     return np.array(vecs, dtype=np.float32)
 
 
-# ── reranker ──────────────────────────────────────────────────────────────────
-
-_reranker = None
+# ── reranker (LLM-based, multilingual) ────────────────────────────────────────
 
 def rerank(query: str, passages: list[dict], top_k: int = 15) -> list[dict]:
-    """Rerank passages using a cross-encoder. Returns top_k reranked results."""
-    global _reranker
-    if not passages:
-        return []
-    if _reranker is None:
-        from sentence_transformers import CrossEncoder
-        _reranker = CrossEncoder(RERANKER_MODEL_NAME)
-        print(f"  Loaded reranker: {RERANKER_MODEL_NAME}")
+    """Rerank passages using LLM as judge (multilingual, no extra model needed)."""
+    if not passages or len(passages) <= top_k:
+        return passages
 
-    # Build query-passage pairs
-    pairs = [(query, p.get("text", "")[:512]) for p in passages]
-    scores = _reranker.predict(pairs)
+    # Build a compact list of candidates for LLM to rank
+    candidates = []
+    for i, p in enumerate(passages[:30]):
+        title = (p.get("doc_title") or "")[:60]
+        section = (p.get("section") or "")[:40]
+        text_snippet = (p.get("text") or "")[:100]
+        candidates.append(f"{i}: {title} | {section} | {text_snippet}")
 
-    # Attach rerank scores and sort
-    for i, p in enumerate(passages):
-        p["rerank_score"] = float(scores[i])
+    from agent import llm
+    rerank_prompt = f"""Given the question, rank these document passages by relevance. Return ONLY the indices of the top {top_k} most relevant passages as a JSON array of integers, most relevant first.
 
-    passages.sort(key=lambda x: x["rerank_score"], reverse=True)
+Question: {query}
 
-    # Filter out clearly irrelevant passages (negative scores = not relevant)
-    filtered = [p for p in passages if p["rerank_score"] > -5.0]
-    return (filtered or passages)[:top_k]
+Passages:
+{chr(10).join(candidates)}
+
+Return ONLY a JSON array like [3, 0, 7, 1, ...]. No other text."""
+
+    raw = llm(rerank_prompt, "", model=None)
+
+    # Parse the ranked indices
+    import re
+    try:
+        indices = json.loads(raw)
+        if isinstance(indices, list):
+            ranked = []
+            for idx in indices[:top_k]:
+                if isinstance(idx, int) and 0 <= idx < len(passages):
+                    passages[idx]["rerank_score"] = top_k - len(ranked)
+                    ranked.append(passages[idx])
+            if ranked:
+                return ranked
+    except Exception:
+        pass
+
+    # Fallback: try to extract numbers
+    numbers = re.findall(r'\d+', raw)
+    if numbers:
+        ranked = []
+        for n in numbers[:top_k]:
+            idx = int(n)
+            if 0 <= idx < len(passages):
+                passages[idx]["rerank_score"] = top_k - len(ranked)
+                ranked.append(passages[idx])
+        if ranked:
+            return ranked
+
+    # If LLM rerank fails, return original order
+    return passages[:top_k]
 
 
 # ── build / load vector index ─────────────────────────────────────────────────
@@ -313,7 +341,7 @@ class Retriever:
         top_k: int = 10,
         graph_hops: int = 2,
         max_results: int = 25,
-        use_reranker: bool = False,
+        use_reranker: bool = True,
     ) -> list[dict]:
         # 1. Vector search: find entry points
         seed_pairs = self._vector_search(query, top_k)
