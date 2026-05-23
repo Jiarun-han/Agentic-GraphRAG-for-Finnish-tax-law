@@ -264,10 +264,4 @@ clever code we have to reverse-engineer.
 
 ---
 
-## Help
 
-- Slack: see the QR in `docs/challenge.pdf`.
-- Email: stephane@taxxa.ai
-- We're around all weekend to pair on code or argue about schemas.
-
-Good luck.
