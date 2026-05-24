@@ -92,21 +92,28 @@ pip install -r requirements.txt
 # 2. Set up .env (copy from .env.example, add your API key)
 cp .env.example .env
 
-# 3. Parse corpus (if not already done)
+# 3. Download corpus
+python scripts/fetch_data.py
+
+# 4. Parse corpus
 python parse_corpus.py
 
-# 4. Build graph
+# 5. Build knowledge graph
 python build_graph.py
 
-# 5. Build embeddings index
-python retriever.py --build
+# 6. Build embeddings index (~50 min)
+python build_quick_index.py
 
-# 6. Ask a question
+# 7. Ask a question
 python agent.py "What is the capital income tax rate for income exceeding 30000 euros?"
 
-# 7. Run evaluation
+# 8. Run evaluation
 python evaluate.py --limit 5    # quick test
 python evaluate.py              # full 83 questions
+
+# 9. Start API + frontend (optional)
+python api.py                   # backend on :8000
+cd frontend && npm install && npm run dev  # frontend on :8080
 ```
 
 ## Evaluation Results
