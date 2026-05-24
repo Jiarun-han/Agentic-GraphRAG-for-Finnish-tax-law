@@ -14,6 +14,7 @@ export interface TaxxaResponse {
   citations: Citation[];
   unverified_claims?: string[];
   conflicts?: string[];
+  confidence_label?: string;
   context_node_count: number;
 }
 

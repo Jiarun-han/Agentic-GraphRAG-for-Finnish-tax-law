@@ -178,6 +178,27 @@ function ChatTurn({ turn }: { turn: Turn }) {
           {turn.data.citations.length > 0 && (
             <CitationsCard citations={turn.data.citations} />
           )}
+          {/* Reasoning transparency */}
+          <details className="glass-subtle p-4 rounded-md text-sm">
+            <summary className="cursor-pointer text-muted-foreground font-medium">
+              Show reasoning · {turn.data.context_node_count} documents analyzed · {turn.data.sub_queries.length} search queries
+            </summary>
+            <div className="mt-3 space-y-2">
+              <div>
+                <span className="text-xs uppercase tracking-wider text-muted-foreground">Search strategy:</span>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {turn.data.sub_queries.map((q, i) => (
+                    <span key={i} className="inline-block px-2 py-1 text-xs bg-foreground/5 rounded">{q}</span>
+                  ))}
+                </div>
+              </div>
+              {turn.data.confidence_label && (
+                <div className="text-xs text-muted-foreground">
+                  Confidence: <span className="font-medium text-foreground">{turn.data.confidence_label}</span>
+                </div>
+              )}
+            </div>
+          </details>
         </div>
       )}
     </div>
