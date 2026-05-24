@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Taxxa — Hackathon Presentation</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100vw; height: 100vh; overflow: hidden; background: #000; }
+iframe {
+  width: 1920px;
+  height: 1080px;
+  border: none;
+  transform-origin: top left;
+  position: absolute;
+  top: 0; left: 0;
+}
+#counter {
+  position: fixed;
+  bottom: 16px;
+  right: 24px;
+  font: 14px/1 -apple-system, sans-serif;
+  color: rgba(255,255,255,0.4);
+  z-index: 999;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<iframe id="slide"></iframe>
+<div id="counter"></div>
+<script>
+const SLIDES = [
+  'slide-01-title.html',
+  'slide-02-problem.html',
+  'slide-03-approach.html',
+  'slide-04-graphrag.html',
+  'slide-05-results.html',
+  'slide-06-decisions.html',
+  'slide-07-end.html',
+  'slide-08-close.html',
+];
+
+let current = 0;
+const iframe = document.getElementById('slide');
+const counter = document.getElementById('counter');
+
+function show(i) {
+  current = Math.max(0, Math.min(SLIDES.length - 1, i));
+  iframe.src = SLIDES[current];
+  counter.textContent = `${current + 1} / ${SLIDES.length}`;
+  rescale();
+}
+
+function rescale() {
+  const sx = window.innerWidth / 1920;
+  const sy = window.innerHeight / 1080;
+  const s = Math.min(sx, sy);
+  iframe.style.transform = `scale(${s})`;
+  iframe.style.left = `${(window.innerWidth - 1920 * s) / 2}px`;
+  iframe.style.top = `${(window.innerHeight - 1080 * s) / 2}px`;
+}
+
+window.addEventListener('resize', rescale);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { show(current + 1); e.preventDefault(); }
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(current - 1); e.preventDefault(); }
+  if (e.key === 'f' || e.key === 'F') { document.documentElement.requestFullscreen(); }
+});
+
+show(0);
+</script>
+</body>
+</html>

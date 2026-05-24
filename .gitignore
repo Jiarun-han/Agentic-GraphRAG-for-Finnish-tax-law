@@ -24,3 +24,6 @@ data/graph.pkl
 *.sqlite
 *.pkl
 runs/
+node_modules/
+.agents/
+skills-lock.json

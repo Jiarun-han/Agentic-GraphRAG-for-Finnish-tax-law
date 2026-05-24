@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920,height=1080">
+<title>Slide 07 - Trade-offs</title>
+<link rel="stylesheet" href="claude.css">
+</head>
+<body>
+<main class="slide">
+  <header class="masthead"><span>Taxxa GraphRAG</span><span>Prompt Finance Hackathon 2026</span></header>
+  <section style="padding-top: 112px; display:grid; grid-template-columns: 740px 1fr; gap: 110px;">
+    <div>
+      <div class="kicker">Implementation choices</div>
+      <h2 style="margin-top: 42px;">We chose boring pieces where boring made the system ship.</h2>
+      <div class="dark-panel" style="margin-top: 68px;">
+        <p class="small" style="text-transform:uppercase; letter-spacing:.12em; font-weight:700;">Hackathon principle</p>
+        <p style="font-family:'Playfair Display', Georgia, serif; font-size:36px; color:#faf9f5; margin-top:28px;">Working, grounded, explainable beats elaborate and unfinished.</p>
+      </div>
+    </div>
+    <div style="padding-top: 104px;">
+      <p class="small"><span class="mono">Embeddings</span> bge-m3 -> e5-small. Faster iteration while preserving multilingual retrieval quality.</p><div class="rule" style="margin:24px 0;"></div>
+      <p class="small"><span class="mono">Reranking</span> cross-encoder -> LLM. Better Finnish handling and less model plumbing.</p><div class="rule" style="margin:24px 0;"></div>
+      <p class="small"><span class="mono">Traversal</span> blind BFS -> typed walk. Edge type decides what context is worth expanding.</p><div class="rule" style="margin:24px 0;"></div>
+      <p class="small"><span class="mono">Agents</span> single call -> verified loop. Slower, but catches unsupported claims before delivery.</p>
+    </div>
+  </section>
+  <footer class="footer"><span>trade-offs</span><span>07</span></footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920,height=1080">
+<title>Slide 02 - Problem</title>
+<link rel="stylesheet" href="claude.css">
+</head>
+<body>
+<main class="slide">
+  <header class="masthead"><span>Taxxa GraphRAG</span><span>Prompt Finance Hackathon 2026</span></header>
+  <section style="padding-top: 112px; display: grid; grid-template-columns: 760px 1fr; gap: 115px;">
+    <div>
+      <div class="kicker">Why naive RAG fails</div>
+      <h2 style="margin-top: 42px;">Legal research fails when structure is flattened.</h2>
+      <p style="margin-top: 54px; width: 680px;">Finnish tax answers are usually not in one paragraph. They live across statutes, guidance, amendments, definitions, and exceptions.</p>
+      <div style="margin-top: 62px;">
+        <div class="rule"></div>
+        <p class="small" style="margin: 24px 0;"><span class="mono">01</span> <strong style="color:#141413;">Chunking cuts logic</strong> - rules and exceptions split apart.</p>
+        <div class="rule"></div>
+        <p class="small" style="margin: 24px 0;"><span class="mono">02</span> <strong style="color:#141413;">References stay inert</strong> - section links are not followed.</p>
+        <div class="rule"></div>
+        <p class="small" style="margin: 24px 0;"><span class="mono">03</span> <strong style="color:#141413;">Time matters</strong> - superseded rules can rank too highly.</p>
+      </div>
+    </div>
+    <aside class="panel" style="margin-top: 82px; padding: 70px 72px; height: 605px; background:#f4efe7;">
+      <h2 style="font-size: 45px;">"What withholding-tax rate applies to a foreign specialist with key-personnel status?"</h2>
+      <p style="font-size: 25px; margin-top: 58px;">A correct answer needs a statute, a Vero interpretation, and the amendment that changed the rate and validity window.</p>
+      <div style="width: 420px; height: 3px; background:#c96442; margin-top: 64px;"></div>
+      <p class="small clay" style="margin-top: 32px; font-weight: 700;">Top-k returns proximity. The task needs provenance.</p>
+    </aside>
+  </section>
+  <footer class="footer"><span>problem</span><span>02</span></footer>
+</main>
+</body>
+</html>
