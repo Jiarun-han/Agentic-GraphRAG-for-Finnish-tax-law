@@ -1,0 +1,16 @@
+.git
+.env
+__pycache__
+*.pyc
+data/raw/
+data/embeddings.npz
+data/graph.pkl
+data/parsed_nodes.jsonl
+data/node_ids.json
+node_modules
+frontend/node_modules
+.agents
+presentation/
+tests/
+docs/
+huashu-design-master/

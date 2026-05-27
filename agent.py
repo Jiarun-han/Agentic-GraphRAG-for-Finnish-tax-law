@@ -4,45 +4,20 @@ Agentic GraphRAG pipeline.
 Agents:
   Planner   – decompose question into sub-queries
   Retriever – hybrid search per sub-query
-  Verifier  – check each claim has a source node
+  Auditor   – verify claims + check logic + completeness
   Clarifier – detect missing conditions (jurisdiction, tax year, entity type)
+  Confidence – score answer reliability
 
 Usage:
     python agent.py "What is the capital income tax rate?"
 """
-import os, json, textwrap
-from pathlib import Path
+import json
+import re
 from typing import Optional
+
+from config import config, logger
+from llm_client import llm, parse_json_response
 from retriever import Retriever
-
-# Load .env if present
-_env = Path(__file__).parent / ".env"
-if _env.exists():
-    for _line in _env.read_text().splitlines():
-        if _line.strip() and not _line.startswith("#") and "=" in _line:
-            _k, _v = _line.split("=", 1)
-            os.environ.setdefault(_k.strip(), _v.strip())
-
-# ── LLM client ────────────────────────────────────────────────────────────────
-
-def llm(system: str, user: str, model: Optional[str] = None) -> str:
-    """Single LLM call via Featherless AI (OpenAI-compatible)."""
-    from openai import OpenAI
-
-    api_key  = os.getenv("FEATHERLESS_API_KEY")
-    base_url = os.getenv("FEATHERLESS_BASE_URL", "https://api.featherless.ai/v1")
-    model    = model or os.getenv("FEATHERLESS_MODEL", "deepseek-ai/DeepSeek-V4-Pro")
-
-    client = OpenAI(api_key=api_key, base_url=base_url)
-    resp = client.chat.completions.create(
-        model=model,
-        max_tokens=4096,
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user",   "content": user},
-        ],
-    )
-    return resp.choices[0].message.content.strip()
 
 
 # ── Agent: Planner ────────────────────────────────────────────────────────────
@@ -88,37 +63,16 @@ Return ONLY the JSON array, no other text."""
 
 def plan(question: str) -> list[str]:
     raw = llm(PLANNER_SYS, question)
-    # Try to parse as JSON array
-    try:
-        queries = json.loads(raw)
-        if isinstance(queries, list):
-            return [str(q) for q in queries if len(str(q)) > 3]
-    except Exception:
-        pass
-    # Try to fix common issues: missing brackets, markdown code blocks
-    cleaned = raw.strip()
-    if cleaned.startswith("```"):
-        cleaned = cleaned.split("```")[1].strip()
-        if cleaned.startswith("json"):
-            cleaned = cleaned[4:].strip()
-    if not cleaned.startswith("["):
-        cleaned = '["' + cleaned
-    if not cleaned.endswith("]"):
-        cleaned = cleaned + '"]'
-    # Fix unquoted items
-    cleaned = cleaned.replace("', '", '", "').replace("',", '",')
-    try:
-        queries = json.loads(cleaned)
-        if isinstance(queries, list):
-            return [str(q) for q in queries if len(str(q)) > 3]
-    except Exception:
-        pass
-    # Extract quoted strings
-    import re
+    # Use robust JSON parser
+    result = parse_json_response(raw)
+    if isinstance(result, list):
+        return [str(q) for q in result if len(str(q)) > 3]
+    # Extract quoted strings as fallback
     parts = re.findall(r'"([^"]{4,})"', raw)
     if parts:
         return parts
-    # fallback: use original question with Finnish keywords added
+    # Final fallback
+    logger.warning(f"Planner failed to parse: {raw[:100]}")
     return [question]
 
 
@@ -134,18 +88,9 @@ Return ONLY valid JSON."""
 
 def clarify(question: str) -> dict:
     raw = llm(CLARIFIER_SYS, question)
-    try:
-        return json.loads(raw)
-    except Exception:
-        pass
-    # Try to extract JSON from response
-    import re
-    m = re.search(r'\{.*\}', raw, re.DOTALL)
-    if m:
-        try:
-            return json.loads(m.group())
-        except Exception:
-            pass
+    result = parse_json_response(raw)
+    if isinstance(result, dict):
+        return result
     return {"needs_clarification": False}
 
 
@@ -182,19 +127,10 @@ def verify(answer: str, context_nodes: list[dict], question: str = "") -> dict:
     )
     user = f"QUESTION:\n{question}\n\nDRAFT ANSWER:\n{answer}\n\nSOURCES:\n{sources}"
     raw = llm(VERIFIER_SYS, user)
-    try:
-        result = json.loads(raw)
+    result = parse_json_response(raw)
+    if isinstance(result, dict):
         return result
-    except Exception:
-        pass
-    # Try to extract JSON from response
-    import re
-    m = re.search(r'\{.*\}', raw, re.DOTALL)
-    if m:
-        try:
-            return json.loads(m.group())
-        except Exception:
-            pass
+    logger.warning("Auditor failed to return valid JSON")
     return {"verified_claims": [], "unverified_claims": [], "conflicts": [],
             "logic_ok": True, "completeness_ok": True, "missing_info": []}
 
@@ -268,11 +204,11 @@ def score_confidence(question: str, answer: str, verification: dict, logic_check
         f"LOGIC CHECK: {json.dumps(logic_check, ensure_ascii=False)[:500]}"
     )
     raw = llm(CONFIDENCE_SYS, user)
-    try:
-        return json.loads(raw)
-    except Exception:
-        return {"confidence": 0.5, "confidence_label": "medium",
-                "reasoning": "Could not assess", "should_caveat": False, "caveat_text": ""}
+    result = parse_json_response(raw)
+    if isinstance(result, dict):
+        return result
+    return {"confidence": 0.5, "confidence_label": "medium",
+            "reasoning": "Could not assess", "should_caveat": False, "caveat_text": ""}
 
 
 # ── Agent: Answer Generator ───────────────────────────────────────────────────

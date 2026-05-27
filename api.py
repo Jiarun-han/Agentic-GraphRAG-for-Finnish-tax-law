@@ -3,32 +3,25 @@ FastAPI server for the Agentic GraphRAG pipeline.
 Exposes a simple POST /ask endpoint for the frontend.
 
 Usage:
-    pip install fastapi uvicorn
     python api.py
 """
-import os, json
-from pathlib import Path
-from fastapi import FastAPI
+import logging
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-# Load .env
-_env = Path(__file__).parent / ".env"
-if _env.exists():
-    for _line in _env.read_text().splitlines():
-        if _line.strip() and not _line.startswith("#") and "=" in _line:
-            _k, _v = _line.split("=", 1)
-            os.environ.setdefault(_k.strip(), _v.strip())
-
+from config import config, logger
 from agent import answer as agent_answer
 from retriever import Retriever
 
-app = FastAPI(title="Taxxa GraphRAG API", version="1.0")
+app = FastAPI(title="Taxxa GraphRAG API", version="2.0", description="Agentic GraphRAG for Finnish Tax Law")
 
-# Allow CORS for Lovable frontend
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, restrict to your Lovable domain
+    allow_origins=config.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -40,13 +33,13 @@ retriever = None
 @app.on_event("startup")
 def startup():
     global retriever
-    print("Loading retriever...")
+    logger.info("Loading retriever...")
     retriever = Retriever()
-    print("Retriever ready!")
+    logger.info("Retriever ready!")
 
 
 class AskRequest(BaseModel):
-    question: str
+    question: str = Field(..., min_length=3, max_length=2000, description="Tax law question")
 
 
 class Citation(BaseModel):
@@ -75,16 +68,14 @@ class AskResponse(BaseModel):
 @app.post("/ask", response_model=AskResponse)
 def ask(req: AskRequest):
     if not retriever:
-        from fastapi import HTTPException
         raise HTTPException(status_code=503, detail="Retriever not loaded yet")
-    if len(req.question) > 2000:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=400, detail="Question too long (max 2000 chars)")
     try:
+        logger.info(f"Processing question: {req.question[:80]}...")
         result = agent_answer(req.question, retriever, verbose=False)
+        logger.info(f"Answer generated (confidence: {result.get('confidence_label', '?')})")
         return AskResponse(**result)
     except Exception as e:
-        from fastapi import HTTPException
+        logger.error(f"Agent error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Agent error: {str(e)[:200]}")
 
 
@@ -93,6 +84,35 @@ def health():
     return {"status": "ok", "retriever_loaded": retriever is not None}
 
 
+# ── Feedback endpoints ────────────────────────────────────────────────────────
+
+from feedback import FeedbackEntry, save_feedback, get_feedback_stats
+
+
+class FeedbackRequest(BaseModel):
+    request_id: str
+    rating: str = Field(..., pattern="^(correct|partially_correct|wrong)$")
+    correction: str = ""
+    missing_info: str = ""
+
+
+@app.post("/feedback")
+def submit_feedback(req: FeedbackRequest):
+    entry = FeedbackEntry(
+        request_id=req.request_id,
+        rating=req.rating,
+        correction=req.correction,
+        missing_info=req.missing_info,
+    )
+    save_feedback(entry)
+    return {"status": "saved"}
+
+
+@app.get("/feedback/stats")
+def feedback_stats():
+    return get_feedback_stats()
+
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=config.api_host, port=config.api_port)

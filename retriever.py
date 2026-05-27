@@ -5,26 +5,20 @@ Usage:
     retriever = Retriever()
     results = retriever.retrieve("What is the capital income tax rate?", top_k=5)
 """
-import json, pickle, os, sys
+import json, pickle, sys, re
 from pathlib import Path
 from typing import Optional
 import numpy as np
 import networkx as nx
 
-# Load .env if present
-_env = Path(__file__).parent / ".env"
-if _env.exists():
-    for _line in _env.read_text().splitlines():
-        if _line.strip() and not _line.startswith("#") and "=" in _line:
-            _k, _v = _line.split("=", 1)
-            os.environ.setdefault(_k.strip(), _v.strip())
+from config import config, logger
 
-NODES_FILE  = Path(__file__).parent / "data/parsed_nodes.jsonl"
-GRAPH_FILE  = Path(__file__).parent / "data/graph.pkl"
-EMBED_FILE  = Path(__file__).parent / "data/embeddings.npz"
-INDEX_FILE  = Path(__file__).parent / "data/node_ids.json"
+NODES_FILE  = config.nodes_file
+GRAPH_FILE  = config.graph_file
+EMBED_FILE  = config.embed_file
+INDEX_FILE  = config.index_file
 
-EMBED_MODEL_NAME = "intfloat/multilingual-e5-small"
+EMBED_MODEL_NAME = config.embed_model
 
 # ── embedding backend ─────────────────────────────────────────────────────────
 
@@ -56,7 +50,7 @@ def rerank(query: str, passages: list[dict], top_k: int = 15) -> list[dict]:
         text_snippet = (p.get("text") or "")[:100]
         candidates.append(f"{i}: {title} | {section} | {text_snippet}")
 
-    from agent import llm
+    from llm_client import llm
     rerank_prompt = f"""Given the question, rank these document passages by relevance. Return ONLY the indices of the top {top_k} most relevant passages as a JSON array of integers, most relevant first.
 
 Question: {query}
