@@ -14,8 +14,8 @@ Evaluated on 83 graded questions from the Taxxa QA bank:
 
 | Metric | Score |
 |--------|-------|
-| Key Facts Coverage | **95%** |
-| Citation Rate | **100%** |
+| Key Facts Coverage | **70%** |
+| Citation Rate | **90.4%** |
 | Answer Rate | **100%** |
 
 Every answer includes traceable source references (document + section + URL).
